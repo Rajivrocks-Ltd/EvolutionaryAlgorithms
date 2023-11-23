@@ -3,27 +3,13 @@ import numpy as np
 # https://iohprofiler.github.io/IOHexp/ and
 # https://pypi.org/project/ioh/
 from ioh import get_problem, logger, ProblemClass
+from GeneticAlgorithm import GA
 
 budget = 5000
 dimension = 50
 
 # To make your results reproducible (not required by the assignment), you could set the random seed by
 # `np.random.seed(some integer, e.g., 42)`
-
-def studentnumber1_studentnumber2_GA(problem):
-    # initial_pop = ... make sure you randomly create the first population
-
-    # `problem.state.evaluations` counts the number of function evaluation automatically,
-    # which is incremented by 1 whenever you call `problem(x)`.
-    # You could also maintain a counter of function evaluations if you prefer.
-    while problem.state.evaluations < budget:
-        # please implement the mutation, crossover, selection here
-        # .....
-        # this is how you evaluate one solution `x`
-        # f = problem(x)
-        pass
-    # no return value needed 
-
 
 def create_problem(fid: int):
     # Declaration of problems to be tested.
@@ -43,15 +29,19 @@ def create_problem(fid: int):
     return problem, l
 
 if __name__ == "__main__":
+    repetitions = 20
+    
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18)
-    for run in range(20): 
-        studentnumber1_studentnumber2_GA(F18)
+    for rep in range(repetitions): 
+        GA18 = GA(F18, budget)
+        GA18.run()
         F18.reset() # it is necessary to reset the problem after each independent run
     _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
-
+    
     F19, _logger = create_problem(19)
-    for run in range(20): 
-        studentnumber1_studentnumber2_GA(F19)
+    for rep in range(repetitions): 
+        GA19 = GA(F19, budget)
+        GA19.run()
         F19.reset()
     _logger.close()
