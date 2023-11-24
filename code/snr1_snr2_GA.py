@@ -6,7 +6,7 @@ from ioh import get_problem, logger, ProblemClass
 from GeneticAlgorithm import GA
 
 budget = 5000
-dimension = 50
+dimension = 10
 
 # To make your results reproducible (not required by the assignment), you could set the random seed by
 # `np.random.seed(some integer, e.g., 42)`
@@ -29,19 +29,20 @@ def create_problem(fid: int):
     return problem, l
 
 if __name__ == "__main__":
-    repetitions = 20
+    repetitions = 1
+    size = 10
     
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18)
     for rep in range(repetitions): 
-        GA18 = GA(F18, budget)
-        GA18.run()
+        GA18 = GA(F18, budget, dimension, size)
+        GA18.main()
         F18.reset() # it is necessary to reset the problem after each independent run
     _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
     
-    F19, _logger = create_problem(19)
-    for rep in range(repetitions): 
-        GA19 = GA(F19, budget)
-        GA19.run()
-        F19.reset()
-    _logger.close()
+    # F19, _logger = create_problem(19)
+    # for rep in range(repetitions): 
+    #     GA19 = GA(F19, budget, dimension)
+    #     GA19.main()
+    #     F19.reset()
+    # _logger.close()
