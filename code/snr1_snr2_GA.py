@@ -27,10 +27,10 @@ def create_problem(fid: int, dimension: int):
 
 if __name__ == "__main__":
     
-    budget = 100
+    budget = 5
     dimension = 4
     repetitions = 1
-    size = 5
+    size = 4
     
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18, dimension)

@@ -9,6 +9,8 @@ class GA():
         self.problem = problem
         self.dim = dimension
         self.pop_size = size
+        if self.pop_size % 2 == 1 :
+            raise ValueError(f"The given population size is uneven! -> Choose an even number for the population size")
     
     def __creategenome(self) -> list:
         """"""
@@ -32,13 +34,40 @@ class GA():
         
     def __selection(self, pop: list, fitness: list, size: int) -> list:
         """"""
-        if size > self.pop_size:
-            raise ValueError(f"The selection size is higher than the size of the population! -> Size of a population: {self.pop_size}")
-        elif size < 1:
-            raise ValueError(f"Select at least 1 genome of the population!")
+        # Calculate the total fitness of the population
+        total_fitness = sum(fitness)
         
-        selection = choices(population=pop, weights=fitness, k=size) # arg 'weights': parameter to weigh the possibility for each value.
-        return selection
+        # Calculate the proportional fitness for each individual
+        proportional_fitness = [fit / total_fitness for fit in fitness]
+        
+        # Create a roulette wheel based on proportional fitness
+        roulette_wheel = []
+        accumulated_fitness = 0
+        for pf in proportional_fitness:
+            accumulated_fitness += pf
+            roulette_wheel.append(accumulated_fitness)
+        
+        # Select individuals using the roulette wheel
+        selected_individuals = []
+        for _ in range(size):
+            spin = random()
+            selected_index = 0
+            while roulette_wheel[selected_index] < spin:
+                selected_index += 1
+            selected_individuals.append(pop[selected_index])
+        
+        return selected_individuals
+        
+    # def __selection(self, pop: list, fitness: list, size: int) -> list:
+    #     """"""
+    #     if size > self.pop_size:
+    #         raise ValueError(f"The selection size is higher than the size of the population! -> Size of a population: {self.pop_size}")
+    #     elif size < 1:
+    #         raise ValueError(f"Select at least 1 genome of the population!")
+        
+    #     # selection = choices(population=pop, weights=fitness, k=size) # arg 'weights': parameter to weigh the possibility for each value.
+    #     selection = choices(population=pop, k=size) # arg 'weights': parameter to weigh the possibility for each value.
+    #     return selection
     
     def __mutation(self, genome: list, p: float) -> list:
         """"""
@@ -90,9 +119,8 @@ class GA():
         
         return A, B
 
-    def __newgeneration(self, pop: list) -> list:
+    def __newgeneration(self, pop: list, fitness: list) -> list:
         """"""
-        fitness = self.__evaluategeneration(pop)
         newpop = []
         for _ in range(int(self.pop_size/2)):
         
@@ -113,24 +141,26 @@ class GA():
             PM = 0.1
             pop[idx] = self.__mutation(genome=genome, p=PM)
         
-        return newpop
+        newfitness = self.__evaluategeneration(pop)
+        
+        return newpop, newfitness
 
     def main(self, budget):
         """"""
         self.budget = budget
         pop = self.__initialization()
+        fitness = self.__evaluategeneration(pop)
         gen = 1
         while self.problem.state.evaluations < self.budget:
             print(f"--- generation {gen} ---")
             
             # please call the mutation, crossover, selection here
-            pop = self.__newgeneration(pop)
+            pop, fitness = self.__newgeneration(pop, fitness)
             
             gen += 1
             print(f"number of function evaluation: {self.problem.state.evaluations}\n")
 
         # evaluate final generation
-        fitness = self.__evaluategeneration(pop)
         bestfitness = max(fitness)
         bestgenome = pop[fitness.index(bestfitness)]
         
