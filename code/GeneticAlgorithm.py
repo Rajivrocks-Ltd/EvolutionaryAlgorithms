@@ -4,10 +4,9 @@ import time
 
 class GA():
     """"""
-    def __init__(self, problem, budget, dimension, size):
+    def __init__(self, problem, dimension, size):
         """"""
         self.problem = problem
-        self.budget = budget
         self.dim = dimension
         self.pop_size = size
     
@@ -16,14 +15,30 @@ class GA():
         genome = choices(population=[0, 1], k=self.dim)
         return genome
     
-    def __evaluategenome(self, genome: list) -> float:
+    def __evaluategenome(self, genome: list) -> float: # !Note: Calculates F(x) not E(x).
         """"""
         fitness = self.problem(genome)
         return fitness
-        
-    def __initialization(self):
+    
+    def __evaluategeneration(self, pop) -> list:
         """"""
-        self.pop = [self.__creategenome() for _ in range(self.pop_size)]
+        fitness = [self.__evaluategenome(genome) for genome in pop]        
+        return fitness
+        
+    def __initialization(self) -> list:
+        """"""
+        pop = [self.__creategenome() for _ in range(self.pop_size)]
+        return pop
+        
+    def __selection(self, pop: list, fitness: list, size: int) -> list:
+        """"""
+        if size > self.pop_size:
+            raise ValueError(f"The selection size is higher than the size of the population! -> Size of a population: {self.pop_size}")
+        elif size < 1:
+            raise ValueError(f"Select at least 1 genome of the population!")
+        
+        selection = choices(population=pop, weights=fitness, k=size) # arg 'weights': parameter to weigh the possibility for each value.
+        return selection
     
     def __mutation(self, genome: list, p: float) -> list:
         """"""
@@ -33,7 +48,7 @@ class GA():
             raise ValueError(f"The value for p is to big! -> Choose a p between 0 and 1")
         
         for idx in range(self.dim):
-            if random() > p:
+            if random() < p:
                 genome[idx] = np.abs(genome[idx]-1)
                 
         return genome
@@ -74,41 +89,52 @@ class GA():
                 B.append(genome_A[idx])
         
         return A, B
-    
-    def __selection(self, size: int) -> list:
-        """"""
-        if size > self.pop_size:
-            raise ValueError(f"The selection size is higher than the size of the population! -> Size of a population: {self.pop_size}")
-        elif size < 1:
-            raise ValueError(f"Select at least 1 genome of the population!")
-        
-        fitness = [self.__evaluategenome(genome) for genome in self.pop]
-        selection = choices(population=self.pop, weights=fitness, k=size) # arg 'weights': parameter to weigh the possibility for each value.
-        return selection
 
-    def __generation(self):
+    def __newgeneration(self, pop: list) -> list:
         """"""
-        A = [1,1,1,1,1,1,1,1,1,1]
-        B = [0,0,0,0,0,0,0,0,0,0]
+        fitness = self.__evaluategeneration(pop)
+        newpop = []
+        for _ in range(int(self.pop_size/2)):
         
-        self.__initialization()
-        self.__mutation(genome=A, p=0.5)
-        self.__ncrossover(genome_A=A, genome_B=B, n=3)
-        self.__unicrossover(genome_A=A, genome_B=B, p=0.5)
-        self.__selection(size=3)
+            # SELECTION
+            S = 2
+            parents = self.__selection(pop=pop, fitness=fitness, size=S)
+            par1, par2 = parents[0], parents[1]
+        
+            # CROSSOVER
+            N = 2
+            pop[0], pop[1] = self.__ncrossover(genome_A=par1, genome_B=par2, n=N)
+            # PU = 0.5
+            # pop[0], pop[1] = self.__unicrossover(genome_A=par1, genome_B=par2, p=PU)
+            newpop.extend((pop[0], pop[1]))
+        
+        # MUTATION
+        for idx, genome in enumerate(newpop):
+            PM = 0.1
+            pop[idx] = self.__mutation(genome=genome, p=PM)
+        
+        return newpop
 
-    def main(self):
+    def main(self, budget):
         """"""
-        # `problem.state.evaluations` counts the number of function evaluation automatically,
-        # which is incremented by 1 whenever you call `problem(x)`.
-        # You could also maintain a counter of function evaluations if you prefer.
-        
-        it = 1
+        self.budget = budget
+        pop = self.__initialization()
+        gen = 1
         while self.problem.state.evaluations < self.budget:
-            print(f"--- iteration {it} ---")
+            print(f"--- generation {gen} ---")
             
             # please call the mutation, crossover, selection here
-            self.__generation()
+            pop = self.__newgeneration(pop)
             
-            it += 1
+            gen += 1
             print(f"number of function evaluation: {self.problem.state.evaluations}\n")
+
+        # evaluate final generation
+        fitness = self.__evaluategeneration(pop)
+        bestfitness = max(fitness)
+        bestgenome = pop[fitness.index(bestfitness)]
+        
+        print(f"--- results of last generation: ---")
+        print(fitness)
+        print(pop)
+        print(bestgenome, bestfitness)
