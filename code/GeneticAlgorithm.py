@@ -4,25 +4,67 @@ import time
 
 class GA():
     """"""
-    def __init__(self, problem, dimension, size):
+    def __init__(self, problem, budget, dimension, size):
         """"""
-        self.problem = problem
-        self.dim = dimension
-        self.pop_size = size
-        if self.pop_size % 2 == 1 :
+        # Fixed Parameters
+        self.problem = problem  # Problem to solve
+        self.budget = budget    # The fixed budget, maximum number of evaluations of a individual
+        self.dim = dimension    # Dimension of bit strings
+        self.cash = {}          # Cash dictionary that keeps track of fitness scores of already evaluated genomes
+        
+        # Tuneable parameters
+        self.pop_size = size    # Size of the genome population
+        self.S = True           # If proportional selections should be used instead of random selection
+        self.Pc = 0             # The propability of doing crossover of two genomes, if 0 don't use crossover
+        self.N = 0              # The number of slices for n-crossover, if 0 use uniform crossover
+        self.Pm = 0             # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
+        
+        # Checker for tuneable parameters
+        self.error_checker()
+        
+    def error_checker(self) -> None:
+        if self.pop_size % 2 == 1:
             raise ValueError(f"The given population size is uneven! -> Choose an even number for the population size")
+
+        if not isinstance(self.S, (bool)):
+            raise ValueError(f"The value of S is not a boolean! -> Choose a S of True (Proportional Selection) or False (Random Selection)")
+
+        if self.Pc < 0:
+            raise ValueError(f"The value for pc can not be negative! -> Choose a pc between 0 and 1")
+        elif self.Pc > 1:
+            raise ValueError(f"The value for pc is to big! -> Choose a pc between 0 and 1")
+        
+        if self.N > self.dim-1:
+            raise ValueError(f"Not enough dimension to have n splits! -> Number of dimension: {self.dim}")
+        elif self.N < 0:
+            raise ValueError(f"A negative number of splits is not possible!")
+
+        if self.Pm < 0:
+            raise ValueError(f"The value for pm can not be negative! -> Choose a pm between 0 and 1")
+        elif self.Pm > 1:
+            raise ValueError(f"The value for pm is to big! -> Choose a pm between 0 and 1")
+    
+    def genome2string(self, genome: list) -> str:
+        """"""
+        genomestr = ''.join(str(g) for g in genome)
+        return genomestr
     
     def __creategenome(self) -> list:
         """"""
         genome = choices(population=[0, 1], k=self.dim)
         return genome
     
-    def __evaluategenome(self, genome: list) -> float: # !Note: Calculates F(x) not E(x).
+    def __evaluategenome(self, genome: list) -> float:
         """"""
-        fitness = self.problem(genome)
+        genomestr = self.genome2string(genome)
+        if genomestr in self.cash:
+            fitness = self.cash[genomestr]
+        else:
+            fitness = self.problem(genome)
+            self.cash[genomestr] = fitness
         return fitness
     
-    def __evaluategeneration(self, pop) -> list:
+    def __evaluategeneration(self, pop: list) -> list:
         """"""
         fitness = [self.__evaluategenome(genome) for genome in pop]        
         return fitness
@@ -32,139 +74,90 @@ class GA():
         pop = [self.__creategenome() for _ in range(self.pop_size)]
         return pop
         
-    def __selection(self, pop: list, fitness: list, size: int) -> list:
-        """"""
-        # Calculate the total fitness of the population
-        total_fitness = sum(fitness)
+    def __selection(self, pop: list, fitness: list) -> list:
+        """"""        
+        if self.S:
+            selection = choices(population=pop, weights=fitness, k=self.pop_size) # arg 'weights': parameter to weigh the possibility for each value.
+            # selection = self.__proportionalselection(pop=pop, fitness=fitness)
+        else:
+            selection = choices(population=pop, k=self.pop_size)
         
-        # Calculate the proportional fitness for each individual
-        proportional_fitness = [fit / total_fitness for fit in fitness]
+        return selection
+            
+    def __proportionalselection(self, pop: list, fitness: list) -> list:
+        """"""            
+        total_fitness = sum(fitness) # Calculate the total fitness of the population
+        proportional_fitness = [fit / total_fitness for fit in fitness] # Calculate the proportional fitness for each individual
+        roulette_wheel = list(np.cumsum(proportional_fitness)) # Calculate the cumulative propabilities for the roulette    
         
-        # Create a roulette wheel based on proportional fitness
-        roulette_wheel = []
-        accumulated_fitness = 0
-        for pf in proportional_fitness:
-            accumulated_fitness += pf
-            roulette_wheel.append(accumulated_fitness)
-        
-        # Select individuals using the roulette wheel
         selected_individuals = []
-        for _ in range(size):
-            spin = random()
-            selected_index = 0
-            while roulette_wheel[selected_index] < spin:
-                selected_index += 1
-            selected_individuals.append(pop[selected_index])
+        for _ in range(self.pop_size):
+            selected_individuals.append(pop[next(index for index, value in enumerate(roulette_wheel) if random() < value)])
         
         return selected_individuals
-        
-    # def __selection(self, pop: list, fitness: list, size: int) -> list:
-    #     """"""
-    #     if size > self.pop_size:
-    #         raise ValueError(f"The selection size is higher than the size of the population! -> Size of a population: {self.pop_size}")
-    #     elif size < 1:
-    #         raise ValueError(f"Select at least 1 genome of the population!")
-        
-    #     # selection = choices(population=pop, weights=fitness, k=size) # arg 'weights': parameter to weigh the possibility for each value.
-    #     selection = choices(population=pop, k=size) # arg 'weights': parameter to weigh the possibility for each value.
-    #     return selection
-    
-    def __mutation(self, genome: list, p: float) -> list:
-        """"""
-        if p < 0:
-            raise ValueError(f"The value for p can not be negative! -> Choose a p between 0 and 1")
-        elif p > 1:
-            raise ValueError(f"The value for p is to big! -> Choose a p between 0 and 1")
-        
-        for idx in range(self.dim):
-            if random() < p:
-                genome[idx] = np.abs(genome[idx]-1)
-                
-        return genome
-    
-    def __ncrossover(self, genome_A: list, genome_B: list, n: int) -> tuple: # n-point cross over
-        """"""
-        if n > self.dim-1:
-            raise ValueError(f"Not enough dimension to have n splits! -> Number of dimension: {self.dim}")
-        elif n < 0:
-            raise ValueError(f"A negative number of splits is not possible!")
 
-        
-        splits = sample(range(1, self.dim), k=n)
+    def __ncrossover(self, genome_A: list, genome_B: list) -> tuple:
+        """"""        
+        splits = sample(range(1, self.dim), k=self.N)
         splits.sort()
-        
         for idx in splits:
-            A=genome_A                               # make copy of genome A
-            genome_A = genome_A[:idx] + genome_B[idx:]  # perform crossover after index
+            A=genome_A # make copy of genome A
+            genome_A = genome_A[:idx] + genome_B[idx:] # perform crossover after index
             genome_B = genome_B[:idx] + A[idx:]
-
         return genome_A, genome_B
     
-    def __unicrossover(self, genome_A: list, genome_B: list, p: float) -> tuple: # uniform-point cross over
-        """"""
-        if p < 0:
-            raise ValueError(f"The value for p can not be negative! -> Choose a p between 0 and 1")
-        elif p > 1:
-            raise ValueError(f"The value for p is to big! -> Choose a p between 0 and 1")
-        
+    def __unicrossover(self, genome_A: list, genome_B: list) -> tuple:
+        """"""        
         A = []
         B = []
         for idx in range(self.dim):
-            if random() > p:
+            if random() > 0.5:
                 A.append(genome_A[idx])
                 B.append(genome_B[idx])
             else:
                 A.append(genome_B[idx])
                 B.append(genome_A[idx])
-        
         return A, B
 
+    def __mutation(self, genome: list) -> list:
+        """"""        
+        for idx in range(self.dim):
+            if random() < self.Pm:
+                genome[idx] = np.abs(genome[idx]-1)
+        return genome
+    
     def __newgeneration(self, pop: list, fitness: list) -> list:
         """"""
-        newpop = []
-        for _ in range(int(self.pop_size/2)):
+        # SELECTION
+        pop = self.__selection(pop=pop, fitness=fitness)
         
-            # SELECTION
-            S = 2
-            parents = self.__selection(pop=pop, fitness=fitness, size=S)
-            par1, par2 = parents[0], parents[1]
-        
-            # CROSSOVER
-            N = 2
-            pop[0], pop[1] = self.__ncrossover(genome_A=par1, genome_B=par2, n=N)
-            # PU = 0.5
-            # pop[0], pop[1] = self.__unicrossover(genome_A=par1, genome_B=par2, p=PU)
-            newpop.extend((pop[0], pop[1]))
-        
+        # CROSSOVER
+        if self.Pc > 0: # Check if crossover is toggled on
+            if self.N > 0: # If True: perform n-point crossover
+                for idx in range(int(self.pop_size/2)):
+                    if random() < self.Pc:
+                        pop[2*idx], pop[2*idx+1] = self.__ncrossover(genome_A=pop[2*idx], genome_B=pop[2*idx+1])
+            else: # If False: perform uniform crossover
+                for idx in range(int(self.pop_size/2)):
+                    if random() < self.Pc:
+                        pop[2*idx], pop[2*idx+1] = self.__unicrossover(genome_A=pop[2*idx], genome_B=pop[2*idx+1])
+                    
         # MUTATION
-        for idx, genome in enumerate(newpop):
-            PM = 0.1
-            pop[idx] = self.__mutation(genome=genome, p=PM)
+        if self.Pm > 0: # Check if mutation is toggled on
+            for idx, genome in enumerate(pop):
+                pop[idx] = self.__mutation(genome=genome)
         
-        newfitness = self.__evaluategeneration(pop)
+        # EVALUATION
+        fitness = self.__evaluategeneration(pop)
         
-        return newpop, newfitness
+        return pop, fitness
 
-    def main(self, budget):
+    def main(self):
         """"""
-        self.budget = budget
         pop = self.__initialization()
         fitness = self.__evaluategeneration(pop)
         gen = 1
         while self.problem.state.evaluations < self.budget:
             print(f"--- generation {gen} ---")
-            
-            # please call the mutation, crossover, selection here
-            pop, fitness = self.__newgeneration(pop, fitness)
-            
+            pop, fitness = self.__newgeneration(pop, fitness)            
             gen += 1
-            print(f"number of function evaluation: {self.problem.state.evaluations}\n")
-
-        # evaluate final generation
-        bestfitness = max(fitness)
-        bestgenome = pop[fitness.index(bestfitness)]
-        
-        print(f"--- results of last generation: ---")
-        print(fitness)
-        print(pop)
-        print(bestgenome, bestfitness)

@@ -27,16 +27,16 @@ def create_problem(fid: int, dimension: int):
 
 if __name__ == "__main__":
     
-    budget = 5
-    dimension = 4
-    repetitions = 1
-    size = 4
+    budget = 5000
+    dimension = 50
+    repetitions = 20
+    size = 10
     
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18, dimension)
     for rep in range(repetitions): 
-        GA18 = GA(F18, dimension, size)
-        GA18.main(budget)
+        GA18 = GA(F18, budget, dimension, size)
+        GA18.main()
         F18.reset() # it is necessary to reset the problem after each independent run
     _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
     
