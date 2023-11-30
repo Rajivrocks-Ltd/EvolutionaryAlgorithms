@@ -4,25 +4,31 @@ import time
 
 class GA():
     """"""
-    def __init__(self, problem, budget, dimension, size):
+    def __init__(self, problem, budget, dimension):
         """"""
         # Fixed Parameters
         self.problem = problem  # Problem to solve
         self.budget = budget    # The fixed budget, maximum number of evaluations of a individual
         self.dim = dimension    # Dimension of bit strings
         self.cash = {}          # Cash dictionary that keeps track of fitness scores of already evaluated genomes
+        self.params = False     # Boolean that is False if parameters are not set and True otherwise
         
+    def setparameters(self, size, S, Pc, N, Pm):
+    
         # Tuneable parameters
         self.pop_size = size    # Size of the genome population
-        self.S = True           # If proportional selections should be used instead of random selection
-        self.Pc = 0             # The propability of doing crossover of two genomes, if 0 don't use crossover
-        self.N = 0              # The number of slices for n-crossover, if 0 use uniform crossover
-        self.Pm = 0             # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
+        self.S = S              # If proportional selections should be used instead of random selection
+        self.Pc = Pc            # The propability of doing crossover of two genomes, if 0 don't use crossover
+        self.N = N              # The number of slices for n-crossover, if 0 use uniform crossover
+        self.Pm = Pm            # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
         
         # Checker for tuneable parameters
-        self.error_checker()
+        self.__error_checker()
         
-    def error_checker(self) -> None:
+        # Parameters are set
+        self.params = True
+        
+    def __error_checker(self) -> None:
         if self.pop_size % 2 == 1:
             raise ValueError(f"The given population size is uneven! -> Choose an even number for the population size")
 
@@ -84,17 +90,17 @@ class GA():
         
         return selection
             
-    def __proportionalselection(self, pop: list, fitness: list) -> list:
-        """"""            
-        total_fitness = sum(fitness) # Calculate the total fitness of the population
-        proportional_fitness = [fit / total_fitness for fit in fitness] # Calculate the proportional fitness for each individual
-        roulette_wheel = list(np.cumsum(proportional_fitness)) # Calculate the cumulative propabilities for the roulette    
+    # def __proportionalselection(self, pop: list, fitness: list) -> list:
+    #     """"""            
+    #     total_fitness = sum(fitness) # Calculate the total fitness of the population
+    #     proportional_fitness = [fit / total_fitness for fit in fitness] # Calculate the proportional fitness for each individual
+    #     roulette_wheel = list(np.cumsum(proportional_fitness)) # Calculate the cumulative propabilities for the roulette    
         
-        selected_individuals = []
-        for _ in range(self.pop_size):
-            selected_individuals.append(pop[next(index for index, value in enumerate(roulette_wheel) if random() < value)])
+    #     selected_individuals = []
+    #     for _ in range(self.pop_size):
+    #         selected_individuals.append(pop[next(index for index, value in enumerate(roulette_wheel) if random() < value)])
         
-        return selected_individuals
+    #     return selected_individuals
 
     def __ncrossover(self, genome_A: list, genome_B: list) -> tuple:
         """"""        
@@ -154,6 +160,9 @@ class GA():
 
     def main(self):
         """"""
+        if self.params == False:
+            raise InterruptedError("Please first set the parameters for the model with class.setparameters()!")
+        
         pop = self.__initialization()
         fitness = self.__evaluategeneration(pop)
         gen = 1
