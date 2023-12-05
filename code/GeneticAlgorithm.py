@@ -1,5 +1,5 @@
 import numpy as np
-from random import choices, random, sample
+from random import choices, uniform, sample
 import time 
 
 class GA():
@@ -12,9 +12,10 @@ class GA():
         self.dim = dimension    # Dimension of bit strings
         self.cash = {}          # Cash dictionary that keeps track of fitness scores of already evaluated genomes
         self.params = False     # Boolean that is False if parameters are not set and True otherwise
+        self.best_fitness = 0
         
     def setparameters(self, size, S, Pc, N, Pm):
-    
+        """"""
         # Tuneable parameters
         self.pop_size = size    # Size of the genome population
         self.S = S              # If proportional selections should be used instead of random selection
@@ -29,6 +30,7 @@ class GA():
         self.params = True
         
     def __error_checker(self) -> None:
+        """"""
         if self.pop_size % 2 == 1:
             raise ValueError(f"The given population size is uneven! -> Choose an even number for the population size")
 
@@ -72,7 +74,9 @@ class GA():
     
     def __evaluategeneration(self, pop: list) -> list:
         """"""
-        fitness = [self.__evaluategenome(genome) for genome in pop]        
+        fitness = [self.__evaluategenome(genome) for genome in pop]   
+        if max(fitness) > self.best_fitness:
+                self.best_fitness = max(fitness)
         return fitness
         
     def __initialization(self) -> list:
@@ -98,7 +102,7 @@ class GA():
         
     #     selected_individuals = []
     #     for _ in range(self.pop_size):
-    #         selected_individuals.append(pop[next(index for index, value in enumerate(roulette_wheel) if random() < value)])
+    #         selected_individuals.append(pop[next(index for index, value in enumerate(roulette_wheel) if uniform(0,1) < value)])
         
     #     return selected_individuals
 
@@ -114,21 +118,17 @@ class GA():
     
     def __unicrossover(self, genome_A: list, genome_B: list) -> tuple:
         """"""        
-        A = []
-        B = []
         for idx in range(self.dim):
-            if random() > 0.5:
-                A.append(genome_A[idx])
-                B.append(genome_B[idx])
-            else:
-                A.append(genome_B[idx])
-                B.append(genome_A[idx])
-        return A, B
+            if uniform(0,1) > 0.5:
+                A=genome_A[idx] # make copy of bit idx from genome A
+                genome_A[idx] = genome_B[idx]
+                genome_B[idx] = A
+        return genome_A, genome_B
 
     def __mutation(self, genome: list) -> list:
         """"""        
         for idx in range(self.dim):
-            if random() < self.Pm:
+            if uniform(0,1) < self.Pm:
                 genome[idx] = np.abs(genome[idx]-1)
         return genome
     
@@ -141,11 +141,11 @@ class GA():
         if self.Pc > 0: # Check if crossover is toggled on
             if self.N > 0: # If True: perform n-point crossover
                 for idx in range(int(self.pop_size/2)):
-                    if random() < self.Pc:
+                    if uniform(0,1) < self.Pc:
                         pop[2*idx], pop[2*idx+1] = self.__ncrossover(genome_A=pop[2*idx], genome_B=pop[2*idx+1])
             else: # If False: perform uniform crossover
                 for idx in range(int(self.pop_size/2)):
-                    if random() < self.Pc:
+                    if uniform(0,1) < self.Pc:
                         pop[2*idx], pop[2*idx+1] = self.__unicrossover(genome_A=pop[2*idx], genome_B=pop[2*idx+1])
                     
         # MUTATION
@@ -167,6 +167,7 @@ class GA():
         fitness = self.__evaluategeneration(pop)
         gen = 1
         while self.problem.state.evaluations < self.budget:
-            print(f"--- generation {gen} ---")
-            pop, fitness = self.__newgeneration(pop, fitness)            
+            # print(f"--- generation {gen} ---")
+            pop, fitness = self.__newgeneration(pop, fitness)     
             gen += 1
+            if gen == 10000: break
