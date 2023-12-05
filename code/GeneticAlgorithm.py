@@ -11,14 +11,16 @@ class GA():
         self.budget = budget    # The fixed budget, maximum number of evaluations of a individual
         self.dim = dimension    # Dimension of bit strings
         self.cash = {}          # Cash dictionary that keeps track of fitness scores of already evaluated genomes
+        self.cashed = 0              # Integer that keeps count of the consecutive times the evaluation used the cash 
         self.params = False     # Boolean that is False if parameters are not set and True otherwise
-        self.bestfitness = 0
-        self.bestgenome = None
+        self.best_fitness = 0
+        self.best_genome = None
         
-    def setparameters(self, size, S, Pc, N, Pm) -> None:
+    def setparameters(self, size, S, R, Pc, N, Pm):
         """"""
         # Tuneable parameters
         self.pop_size = size    # Size of the genome population
+        self.R = R
         self.S = S              # If proportional selections should be used instead of random selection
         self.Pc = Pc            # The propability of doing crossover of two genomes, if 0 don't use crossover
         self.N = N              # The number of slices for n-crossover, if 0 use uniform crossover
@@ -43,7 +45,9 @@ class GA():
         elif self.Pc > 1:
             raise ValueError(f"The value for pc is to big! -> Choose a pc between 0 and 1")
         
-        if self.N > self.dim-1:
+        if self.N == None:
+            pass
+        elif self.N > self.dim-1:
             raise ValueError(f"Not enough dimension to have n splits! -> Number of dimension: {self.dim}")
         elif self.N < 0:
             raise ValueError(f"A negative number of splits is not possible!")
@@ -68,17 +72,19 @@ class GA():
         genomestr = self.__genome2string(genome)
         if genomestr in self.cash:
             fitness = self.cash[genomestr]
+            self.cashed += 1
         else:
             fitness = self.problem(genome)
             self.cash[genomestr] = fitness
+            self.cashed = 0
         return fitness
     
     def __evaluategeneration(self, pop: list) -> list:
         """"""
-        fitness = [self.__evaluategenome(genome) for genome in pop]   
-        if max(fitness) > self.bestfitness:
-            self.bestfitness = max(fitness)
-            self.bestgenome = pop[fitness.index(max(fitness))]
+        fitness = [self.__evaluategenome(genome) for genome in pop]
+        if max(fitness) > self.best_fitness:
+            self.best_fitness = max(fitness)
+            self.best_genome = pop[fitness.index(max(fitness))]
         return fitness
         
     def __initialization(self) -> list:
@@ -87,30 +93,35 @@ class GA():
         return pop
         
     def __selection(self, pop: list, fitness: list) -> list:
-        """"""        
-        if self.S:
+        """"""   
+        if self.R:
+            selection = self.__roulettewheel(pop=pop, fitness=fitness)
+        elif self.S:
             selection = choices(population=pop, weights=fitness, k=self.pop_size) # arg 'weights': parameter to weigh the possibility for each value.
-            # selection = self.__roulettewheel(pop=pop, fitness=fitness)
         else:
             selection = choices(population=pop, k=self.pop_size)
         
         return selection
             
-    # def __roulettewheel(self, pop: list, fitness: list) -> list:
-    #     """"""            
-    #     total_fitness = sum(fitness) # Calculate the total fitness of the population
-    #     proportional_fitness = [fit / total_fitness for fit in fitness] # Calculate the proportional fitness for each individual
-    #     roulette_wheel = list(np.cumsum(proportional_fitness)) # Calculate the cumulative propabilities for the roulette    
+    def __roulettewheel(self, pop: list, fitness: list) -> list:
+        """"""            
+        total_fitness = sum(fitness) # Calculate the total fitness of the population
+        proportional_fitness = [fit / total_fitness for fit in fitness] # Calculate the proportional fitness for each individual
+        roulette_wheel = list(np.cumsum(proportional_fitness)) # Calculate the cumulative propabilities for the roulette    
         
-    #     selected_individuals = []
-    #     for _ in range(self.pop_size):
-    #         spin = uniform(0,1)
-    #         selected_index = 0
-    #         while roulette_wheel[selected_index] < spin:
-    #             selected_index += 1
-    #         selected_individuals.append(pop[selected_index])
+        selected_individuals = []
+        for _ in range(self.pop_size):
+            selected_individuals.append(pop[next(index for index, value in enumerate(roulette_wheel) if uniform(0,1) < value)])
         
-    #     return selected_individuals
+        selected_individuals = []
+        for _ in range(self.pop_size):
+            spin = uniform(0,1)
+            selected_index = 0
+            while roulette_wheel[selected_index] < spin:
+                selected_index += 1
+            selected_individuals.append(pop[selected_index])        
+        
+        return selected_individuals
 
     def __ncrossover(self, genome_A: list, genome_B: list) -> tuple:
         """"""        
@@ -140,6 +151,15 @@ class GA():
     
     def __newgeneration(self, pop: list, fitness: list) -> list:
         """"""
+                
+        # EMERGENCY CASE
+        if (self.cashed > self.pop_size*3) and (self.Pm == 0):
+            self.cashed = 0
+            self.Pm = 0.1
+            for idx, genome in enumerate(pop):
+                self.__mutation(genome=genome)
+            self.Pm = 0
+        
         # SELECTION
         pop = self.__selection(pop=pop, fitness=fitness)
         
@@ -155,16 +175,16 @@ class GA():
                         pop[2*idx], pop[2*idx+1] = self.__unicrossover(genome_A=pop[2*idx], genome_B=pop[2*idx+1])
                     
         # MUTATION
-        if self.Pm > 0: # Check if mutation is toggled on
+        if self.Pm > 0: # Only perform mutation if probability threshold is bigger than 0 or cash count exceeds limit
             for idx, genome in enumerate(pop):
                 pop[idx] = self.__mutation(genome=genome)
         
         # EVALUATION
         fitness = self.__evaluategeneration(pop)
-        
+
         return pop, fitness
 
-    def main(self) -> None:
+    def main(self):
         """"""
         if self.params == False:
             raise InterruptedError("Please first set the parameters for the model with class.setparameters()!")
@@ -173,14 +193,8 @@ class GA():
         fitness = self.__evaluategeneration(pop)
         gen = 1
         while self.problem.state.evaluations < self.budget:
-            print(f"--- generation {gen} ---")
+            # print(f"--- generation {gen} ---")
             pop, fitness = self.__newgeneration(pop, fitness)     
             gen += 1
-            if gen == 100000: break
-            
-        print(f"\n=== ended program ===")
-        print(f" ~ generation:   {gen}")
-        print(f" ~ best fitness: {self.bestfitness}")
-        print(f" ~ best genome:  {self.bestgenome}")
-        # print(f"")
-        # print(f"")
+            # print(self.problem.state.evaluations)
+            # if gen == 25000: break

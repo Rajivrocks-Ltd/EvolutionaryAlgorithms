@@ -35,16 +35,17 @@ if __name__ == "__main__":
     
     # Tuneable parameters
     P = 50      # Size of the genome population
-    S = True    # If proportional selections should be used instead of random selection
-    C = .8      # The propability of doing crossover of two genomes, if 0 don't use crossover
+    R = True
+    S = False    # If proportional selections should be used instead of random selection
+    C = 0.5      # The propability of doing crossover of two genomes, if 0 don't use crossover
     N = 4       # The number of slices for n-crossover, if 0 use uniform crossover
-    M = .1      # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
+    M = 0      # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
     
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18, dimension)
     for rep in range(repetitions): 
         GA18 = GA(F18, budget, dimension)
-        GA18.setparameters(P, S, C, N, M)
+        GA18.setparameters(P, R, S, C, N, M)
         GA18.main()
         F18.reset() # it is necessary to reset the problem after each independent run
     _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
