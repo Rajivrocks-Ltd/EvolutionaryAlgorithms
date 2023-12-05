@@ -12,9 +12,10 @@ class GA():
         self.dim = dimension    # Dimension of bit strings
         self.cash = {}          # Cash dictionary that keeps track of fitness scores of already evaluated genomes
         self.params = False     # Boolean that is False if parameters are not set and True otherwise
-        self.best_fitness = 0
+        self.bestfitness = 0
+        self.bestgenome = None
         
-    def setparameters(self, size, S, Pc, N, Pm):
+    def setparameters(self, size, S, Pc, N, Pm) -> None:
         """"""
         # Tuneable parameters
         self.pop_size = size    # Size of the genome population
@@ -52,7 +53,7 @@ class GA():
         elif self.Pm > 1:
             raise ValueError(f"The value for pm is to big! -> Choose a pm between 0 and 1")
     
-    def genome2string(self, genome: list) -> str:
+    def __genome2string(self, genome: list) -> str:
         """"""
         genomestr = ''.join(str(g) for g in genome)
         return genomestr
@@ -64,7 +65,7 @@ class GA():
     
     def __evaluategenome(self, genome: list) -> float:
         """"""
-        genomestr = self.genome2string(genome)
+        genomestr = self.__genome2string(genome)
         if genomestr in self.cash:
             fitness = self.cash[genomestr]
         else:
@@ -75,8 +76,9 @@ class GA():
     def __evaluategeneration(self, pop: list) -> list:
         """"""
         fitness = [self.__evaluategenome(genome) for genome in pop]   
-        if max(fitness) > self.best_fitness:
-                self.best_fitness = max(fitness)
+        if max(fitness) > self.bestfitness:
+            self.bestfitness = max(fitness)
+            self.bestgenome = pop[fitness.index(max(fitness))]
         return fitness
         
     def __initialization(self) -> list:
@@ -88,13 +90,13 @@ class GA():
         """"""        
         if self.S:
             selection = choices(population=pop, weights=fitness, k=self.pop_size) # arg 'weights': parameter to weigh the possibility for each value.
-            # selection = self.__proportionalselection(pop=pop, fitness=fitness)
+            # selection = self.__roulettewheel(pop=pop, fitness=fitness)
         else:
             selection = choices(population=pop, k=self.pop_size)
         
         return selection
             
-    # def __proportionalselection(self, pop: list, fitness: list) -> list:
+    # def __roulettewheel(self, pop: list, fitness: list) -> list:
     #     """"""            
     #     total_fitness = sum(fitness) # Calculate the total fitness of the population
     #     proportional_fitness = [fit / total_fitness for fit in fitness] # Calculate the proportional fitness for each individual
@@ -102,7 +104,11 @@ class GA():
         
     #     selected_individuals = []
     #     for _ in range(self.pop_size):
-    #         selected_individuals.append(pop[next(index for index, value in enumerate(roulette_wheel) if uniform(0,1) < value)])
+    #         spin = uniform(0,1)
+    #         selected_index = 0
+    #         while roulette_wheel[selected_index] < spin:
+    #             selected_index += 1
+    #         selected_individuals.append(pop[selected_index])
         
     #     return selected_individuals
 
@@ -158,7 +164,7 @@ class GA():
         
         return pop, fitness
 
-    def main(self):
+    def main(self) -> None:
         """"""
         if self.params == False:
             raise InterruptedError("Please first set the parameters for the model with class.setparameters()!")
@@ -167,7 +173,14 @@ class GA():
         fitness = self.__evaluategeneration(pop)
         gen = 1
         while self.problem.state.evaluations < self.budget:
-            # print(f"--- generation {gen} ---")
+            print(f"--- generation {gen} ---")
             pop, fitness = self.__newgeneration(pop, fitness)     
             gen += 1
-            if gen == 10000: break
+            if gen == 100000: break
+            
+        print(f"\n=== ended program ===")
+        print(f" ~ generation:   {gen}")
+        print(f" ~ best fitness: {self.bestfitness}")
+        print(f" ~ best genome:  {self.bestgenome}")
+        # print(f"")
+        # print(f"")

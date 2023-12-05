@@ -8,6 +8,8 @@ from GeneticAlgorithm import GA
 # To make your results reproducible (not required by the assignment), you could set the random seed by
 # `np.random.seed(some integer, e.g., 42)`
 
+np.random.seed(1)
+
 def create_problem(fid: int, dimension: int):
     # Declaration of problems to be tested.
     problem = get_problem(fid, dimension=dimension, instance=1, problem_class=ProblemClass.PBO)
@@ -32,11 +34,11 @@ if __name__ == "__main__":
     repetitions = 20
     
     # Tuneable parameters
-    P = 10      # Size of the genome population
+    P = 50      # Size of the genome population
     S = True    # If proportional selections should be used instead of random selection
-    C = 0       # The propability of doing crossover of two genomes, if 0 don't use crossover
-    N = 0       # The number of slices for n-crossover, if 0 use uniform crossover
-    M = 0       # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
+    C = .8      # The propability of doing crossover of two genomes, if 0 don't use crossover
+    N = 4       # The number of slices for n-crossover, if 0 use uniform crossover
+    M = .1      # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
     
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18, dimension)
