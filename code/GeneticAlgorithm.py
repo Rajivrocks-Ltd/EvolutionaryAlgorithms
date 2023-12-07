@@ -1,6 +1,5 @@
 import numpy as np
 from random import choices, uniform, sample
-import time 
 
 class GA():
     """"""
@@ -11,16 +10,15 @@ class GA():
         self.budget = budget    # The fixed budget, maximum number of evaluations of a individual
         self.dim = dimension    # Dimension of bit strings
         self.cash = {}          # Cash dictionary that keeps track of fitness scores of already evaluated genomes
-        self.cashed = 0              # Integer that keeps count of the consecutive times the evaluation used the cash 
+        self.cashed = 0         # Integer that keeps count of the consecutive times the evaluation used the cash 
         self.params = False     # Boolean that is False if parameters are not set and True otherwise
         self.best_fitness = 0
         self.best_genome = None
         
-    def setparameters(self, size, S, R, Pc, N, Pm):
+    def setparameters(self, size, S, Pc, N, Pm):
         """"""
         # Tuneable parameters
         self.pop_size = size    # Size of the genome population
-        self.R = R
         self.S = S              # If proportional selections should be used instead of random selection
         self.Pc = Pc            # The propability of doing crossover of two genomes, if 0 don't use crossover
         self.N = N              # The number of slices for n-crossover, if 0 use uniform crossover
@@ -37,8 +35,8 @@ class GA():
         if self.pop_size % 2 == 1:
             raise ValueError(f"The given population size is uneven! -> Choose an even number for the population size")
 
-        if not isinstance(self.S, (bool)):
-            raise ValueError(f"The value of S is not a boolean! -> Choose a S of True (Proportional Selection) or False (Random Selection)")
+        if self.S not in ['random selection', 'weighted choice', 'roulette wheel']:
+            raise ValueError(f"This value of S is not possible! -> Choose a S of 'random selection', 'weighted choice' or 'roulette wheel'")
 
         if self.Pc < 0:
             raise ValueError(f"The value for pc can not be negative! -> Choose a pc between 0 and 1")
@@ -94,9 +92,9 @@ class GA():
         
     def __selection(self, pop: list, fitness: list) -> list:
         """"""   
-        if self.R:
+        if self.S == 'roulette wheel':
             selection = self.__roulettewheel(pop=pop, fitness=fitness)
-        elif self.S:
+        elif self.S == 'weighted choice':
             selection = choices(population=pop, weights=fitness, k=self.pop_size) # arg 'weights': parameter to weigh the possibility for each value.
         else:
             selection = choices(population=pop, k=self.pop_size)
@@ -173,7 +171,7 @@ class GA():
                 for idx in range(int(self.pop_size/2)):
                     if uniform(0,1) < self.Pc:
                         pop[2*idx], pop[2*idx+1] = self.__unicrossover(genome_A=pop[2*idx], genome_B=pop[2*idx+1])
-                    
+        
         # MUTATION
         if self.Pm > 0: # Only perform mutation if probability threshold is bigger than 0 or cash count exceeds limit
             for idx, genome in enumerate(pop):
