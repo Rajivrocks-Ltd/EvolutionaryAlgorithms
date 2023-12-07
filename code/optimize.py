@@ -21,7 +21,7 @@ def objective(trial):
         P = trial.suggest_categorical("P", [10, 20, 36, 50, 76, 100])  
         
         # Type of selection
-        S = trial.suggest_categorical("S", ['random selection', 'weighted choice', 'roulette wheel'])        
+        S = trial.suggest_categorical("S", ['random selection', 'roulette wheel'])        
 
         # The propability of doing crossover of two genomes, if 0 don't use crossover
         C = trial.suggest_categorical("C", [0, 0.5, 0.6, 0.8, 0.95])    
@@ -63,7 +63,7 @@ def objective(trial):
     for _ in tqdm(range(repetitions), desc="Loading..."):
     # for _ in range(repetitions): 
         model = GA(F, budget, dimension)
-        model.setparameters(P, R, S, C, N, M)
+        model.setparameters(P, S, C, N, M)
         model.main()
         best_fitness.append(model.best_fitness)
         best_genomes.append(model.best_genome)
@@ -92,10 +92,7 @@ def tune(total_trials):
     
 def results(problem):
     results = pandas.read_csv(f'GA{problem}-study.csv')    
-    
-    # Sort the results
     results = results.sort_values(by=['value'], ascending=False) 
-    print(results.columns)
     print(results[['number', 'value', 'params_C', 'params_M', 'params_N', 'params_P', 'params_S', 'state']].head(10))
     
     results1 = results[['value','params_C']].groupby(['params_C']).mean()
@@ -122,7 +119,7 @@ def addresults(problem):
     concat_df.to_csv('GA{problem}-study.csv')
         
 def main():
-    results(19)
+    results(18)
     # tune(1000)
     # addresults(19)
 

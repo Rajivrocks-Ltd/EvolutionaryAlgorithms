@@ -1,5 +1,5 @@
 import numpy as np
-from random import choices, uniform, sample
+from numpy.random import choice, uniform, sample
 
 class GA():
     """"""
@@ -35,8 +35,8 @@ class GA():
         if self.pop_size % 2 == 1:
             raise ValueError(f"The given population size is uneven! -> Choose an even number for the population size")
 
-        if self.S not in ['random selection', 'weighted choice', 'roulette wheel']:
-            raise ValueError(f"This value of S is not possible! -> Choose a S of 'random selection', 'weighted choice' or 'roulette wheel'")
+        if self.S not in ['random selection', 'roulette wheel']:
+            raise ValueError(f"This value of S is not possible! -> Choose a S of 'random selection' or 'roulette wheel'")
 
         if self.Pc < 0:
             raise ValueError(f"The value for pc can not be negative! -> Choose a pc between 0 and 1")
@@ -62,7 +62,7 @@ class GA():
     
     def __creategenome(self) -> list:
         """"""
-        genome = choices(population=[0, 1], k=self.dim)
+        genome = [choice([0, 1]) for _ in range(self.dim)]
         return genome
     
     def __evaluategenome(self, genome: list) -> float:
@@ -94,11 +94,8 @@ class GA():
         """"""   
         if self.S == 'roulette wheel':
             selection = self.__roulettewheel(pop=pop, fitness=fitness)
-        elif self.S == 'weighted choice':
-            selection = choices(population=pop, weights=fitness, k=self.pop_size) # arg 'weights': parameter to weigh the possibility for each value.
         else:
-            selection = choices(population=pop, k=self.pop_size)
-        
+            selection = [choice(pop) for _ in range(self.pop_size)]
         return selection
             
     def __roulettewheel(self, pop: list, fitness: list) -> list:
@@ -123,7 +120,7 @@ class GA():
 
     def __ncrossover(self, genome_A: list, genome_B: list) -> tuple:
         """"""        
-        splits = sample(range(1, self.dim), k=self.N)
+        splits = np.random.choice(np.arange(1, self.dim), size=self.N)
         splits.sort()
         for idx in splits:
             A=genome_A # make copy of genome A

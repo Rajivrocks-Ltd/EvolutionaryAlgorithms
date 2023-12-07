@@ -32,12 +32,23 @@ if __name__ == "__main__":
     dimension = 50
     repetitions = 20
     
+    """
+    P = [20,75) -> top6 is 50
+    S = ['weighted choice' and 'roulette wheel']
+    C = 0.5 of 0.6
+    N = 4, 6, 8
+    M = 0 of 0.01
+    
+    """
+    
     # Tuneable parameters
     P = 50                  # Size of the genome population
-    S = 'roulette wheel'    # The choice between 'random selection', 'weighted choice' and 'roulette wheel'
+    S = 'roulette wheel'    # The choice between 'random selection' and 'roulette wheel'
     C = 0.6                 # The propability of doing crossover of two genomes, if 0 don't use crossover
     N = 10                  # The number of slices for n-crossover, if 0 use uniform crossover
     M = 0                   # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
+    
+    best_fitness = []
     
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18, dimension)
@@ -45,8 +56,11 @@ if __name__ == "__main__":
         GA18 = GA(F18, budget, dimension)
         GA18.setparameters(P, S, C, N, M)
         GA18.main()
+        best_fitness.append(GA18.best_fitness)
         F18.reset() # it is necessary to reset the problem after each independent run
     _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
+        
+    print(np.average(best_fitness))
         
     # np.random.seed(1)    
     # budget = 5000
@@ -55,7 +69,7 @@ if __name__ == "__main__":
     
     # # Tuneable parameters
     # P = 50                # Size of the genome population
-    # S = 'roulette wheel'  # The choice between 'random selection', 'weighted choice' and 'roulette wheel'
+    # S = 'roulette wheel'    # The choice between 'random selection' and 'roulette wheel'
     # C = 0.5               # The propability of doing crossover of two genomes, if 0 don't use crossover
     # N = 4                 # The number of slices for n-crossover, if 0 use uniform crossover
     # M = 0                 # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
