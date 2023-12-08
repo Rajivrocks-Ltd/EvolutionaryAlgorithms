@@ -95,7 +95,7 @@ class GA():
         if self.S == 'roulette wheel':
             selection = self.__roulettewheel(pop=pop, fitness=fitness)
         else:
-            selection = [choice(pop) for _ in range(self.pop_size)]
+            selection = [choice(np.array(pop)) for _ in range(self.pop_size)]
         return selection
             
     def __roulettewheel(self, pop: list, fitness: list) -> list:
