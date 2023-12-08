@@ -1,7 +1,5 @@
 import numpy as np
-# you need to install this package `ioh`. Please see documentations here: 
-# https://iohprofiler.github.io/IOHexp/ and
-# https://pypi.org/project/ioh/
+from tqdm import tqdm
 from ioh import get_problem, logger, ProblemClass
 from GeneticAlgorithm import GA
 
@@ -27,6 +25,7 @@ def create_problem(fid: int, dimension: int):
 
 if __name__ == "__main__":
     
+    # Fixed parameters
     budget = 5000
     dimension = 50
     repetitions = 20
@@ -40,25 +39,28 @@ if __name__ == "__main__":
     M = 0
     """
     
+    # Random seed for reproducibility
     np.random.seed(1)
+    
     # Tuneable parameters
-    P = 44                  # Size of the genome population
+    P = 44                  # Size of the population
     S = 'roulette wheel'    # The choice between 'random selection' and 'roulette wheel'
     C = 0.5                 # The propability of doing crossover of two genomes, if 0 don't use crossover
     N = 10                  # The number of slices for n-crossover, if 0 use uniform crossover
     M = 0                   # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
         
+    # Running x number of repetitions and keep track of the obtained fitness scores
     best_fitness = []
-    
     F18, _logger = create_problem(18, dimension)
-    for rep in range(repetitions): 
+    for _ in tqdm(range(repetitions), desc="Loading..."):    
         GA18 = GA(F18, budget, dimension)
         GA18.setparameters(P, S, C, N, M)
         GA18.main()
         best_fitness.append(GA18.best_fitness)
-        F18.reset() # it is necessary to reset the problem after each independent run
-    _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
+        F18.reset()
+    _logger.close()
                 
+    # Print average fitness after all repetitions
     print(np.average(best_fitness))
     
     """
@@ -70,23 +72,26 @@ if __name__ == "__main__":
     M = 0
     """
     
+    # Random seed for reproducibility
     np.random.seed(1)
+    
     # Tuneable parameters
-    P = 200                 # Size of the genome population
+    P = 200                 # Size of the population
     S = 'roulette wheel'    # The choice between 'random selection' and 'roulette wheel'
     C = 0.2                 # The propability of doing crossover of two genomes, if 0 don't use crossover
     N = 4                   # The number of slices for n-crossover, if 0 use uniform crossover
     M = 0                   # The propability of doing mutation on a bit of a genome, if 0 don't use mutation
    
+    # Running x number of repetitions and keep track of the obtained fitness scores
     best_fitness = []
-    
     F19, _logger = create_problem(19, dimension)
-    for rep in range(repetitions): 
+    for _ in tqdm(range(repetitions), desc="Loading..."):    
         GA19 = GA(F19, budget, dimension)
         GA19.setparameters(P, S, C, N, M)
         GA19.main()
         best_fitness.append(GA19.best_fitness)
-        F19.reset() # it is necessary to reset the problem after each independent run
-    _logger.close() # after all runs, it is necessary to close the logger to make sure all data are written to the folder
+        F19.reset() 
+    _logger.close()
     
+    # Print average fitness after all repetitions
     print(np.average(best_fitness))

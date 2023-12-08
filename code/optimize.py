@@ -43,8 +43,7 @@ def objective(trial):
         S = trial.suggest_categorical("S", ['random selection', 'roulette wheel'])        
 
         # The propability of doing crossover of two genomes, if 0 don't use crossover
-        # C = trial.suggest_categorical("C", [0, 0.1, 0.3, 0.5, 0.6, 0.8, 0.95])    
-        C = trial.suggest_categorical("C", [0.1, 0.3])    
+        C = trial.suggest_categorical("C", [0, 0.5, 0.6, 0.8, 0.95])    
        
         # The number of slices for n-crossover, if 0 use uniform crossover
         if C>0: 
@@ -120,8 +119,8 @@ def addresults(problem):
     concat_df.to_csv('GA{problem}-study.csv')
         
 def main():
-    results(18)
-    # tune(960)
+    results(19)
+    # tune(480)
     # addresults(19)
 
 if __name__ == "__main__":
