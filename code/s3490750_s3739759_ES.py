@@ -12,7 +12,6 @@ dimension = 50
 # To make your results reproducible (not required by the assignment), you could set the random seed by
 np.random.seed(69)
 
-
 def set_hyper_parameters(problem_id: int):
     if problem_id == 18:
         # Set hyperparameters specific to problem F18
@@ -232,12 +231,14 @@ def create_problem(fid: int, name: str, algorithm_name: str, directory: str):
 if __name__ == "__main__":
     # this how you run your algorithm with 20 repetitions/independent run
     F18, _logger = create_problem(18, "F18", "ES", "ESData-f18")
+    np.random.seed(69)
     for run in range(20):
         s3490750_s3739759_ES(F18, run, 18)
         F18.reset()  # it is necessary to reset the problem after each independent run
     _logger.close()  # after all runs, it is necessary to close the logger to make sure all data are written to the disk
 
     F19, _logger = create_problem(19, "F19", "ES", "ESData-f19")
+    np.random.seed(69)
     for run in range(20):
         s3490750_s3739759_ES(F19, run, 19)
         F19.reset()
