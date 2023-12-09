@@ -1,11 +1,10 @@
 import numpy as np
 import pandas 
-import pickle
 import optuna
-from optuna.samplers import RandomSampler, GridSampler
+from optuna.samplers import RandomSampler
 from tqdm import tqdm
 
-from snr1_snr2_GA import create_problem
+from s3490750_s3739759_GA import create_problem
 from GeneticAlgorithm import GA
 
 def objective(trial):

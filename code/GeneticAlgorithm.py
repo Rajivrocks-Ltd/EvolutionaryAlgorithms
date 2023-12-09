@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.random import choice, uniform, sample
+from numpy.random import choice, uniform
 
 class GA():
     """Class for a Genetic Algorithm and all its functionalities"""
@@ -138,7 +138,7 @@ class GA():
         proportional_fitness = [fit / total_fitness for fit in fitness]
         roulette_wheel = list(np.cumsum(proportional_fitness))
         
-         # List of selected individuals and loop until pop_size number of individuals are selected
+        # List of selected individuals and loop until pop_size number of individuals are selected
         selected_individuals = []
         for _ in range(self.pop_size):
             # Spin the roulette, select index of a genome in the population and add the genome to the list
@@ -154,7 +154,7 @@ class GA():
         """Function to perform n-point crossover"""
         
         # Select the indices where the genomes need to split
-        splits = choice(np.arange(1, self.dim), size=self.N)
+        splits = choice(np.arange(1, self.dim), size=self.N, replace=False)
         splits.sort()
         
         # Split the genome and flip the parts of the parents
